@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Runtime artifact + worktree dirs created inside projects at runtime
+.codex-workers/
+.worktrees/
+
+# Logs
+*.log
+
+# Ad-hoc / scratch test scripts
+/tmp/
+tmp/
+*.tmp
+
+# Editor / OS noise
+.DS_Store
+
+# NOTE: plugins/codex-workers/dist/ is intentionally NOT ignored.
+# The bundled bridge.js MUST be committed so the plugin works without
+# an npm install on the user's machine (spec §34).
