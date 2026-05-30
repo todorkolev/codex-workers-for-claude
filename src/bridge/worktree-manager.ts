@@ -15,6 +15,8 @@
  */
 
 import { execFile } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
 
@@ -197,6 +199,58 @@ class GitWorktreeManager implements WorktreeManager {
       const resolved = path.resolve(w.worktreePath);
       return resolved.startsWith(managedRoot);
     });
+  }
+
+  /**
+   * Compute a unified diff of `dir`'s working tree against HEAD, including
+   * untracked (newly created) files. Codex app-server v2 reports file changes
+   * only inside `item/fileChange` items and never emits a `turn/diff/updated`
+   * notification, so the bridge derives `diff.patch` from git itself — the
+   * canonical "what would be applied" view.
+   *
+   * Works for any write worker's directory: an isolated worktree (the normal
+   * case, where `dir` starts clean so only the worker's changes appear) or, less
+   * commonly, a write worker running directly in the project tree.
+   *
+   * The operation is NON-DESTRUCTIVE: it runs against a throwaway index file
+   * (`GIT_INDEX_FILE`) seeded from HEAD, so the worker's / user's real git index
+   * is never touched. `add --intent-to-add` into that scratch index makes
+   * untracked files render as additions; tracked modifications and deletions
+   * already show in `git diff HEAD`. Best-effort: a non-repo or git failure
+   * surfaces as a thrown Error for the caller to swallow.
+   *
+   * NOTE: for a write worker in the project tree (no worktree), the diff is
+   * working-tree-vs-HEAD, so any pre-existing uncommitted edits are included
+   * alongside the worker's — unavoidable without separate baseline tracking.
+   * Isolated worktrees (the recommended write mode) do not have this caveat.
+   */
+  async diffWorkdir(dir: string): Promise<string> {
+    // A scratch index OUTSIDE the repo, so it never appears in the diff itself.
+    const scratch = mkdtempSync(path.join(os.tmpdir(), "codex-diff-"));
+    const indexFile = path.join(scratch, "index");
+    const env = { ...process.env, GIT_INDEX_FILE: indexFile };
+    const run = async (args: string[]): Promise<string> => {
+      const { stdout } = await execFileAsync("git", ["-C", dir, ...args], {
+        env,
+        maxBuffer: 64 * 1024 * 1024,
+      });
+      return stdout;
+    };
+    // Exclude the bridge's own bookkeeping dirs so they never pollute the diff
+    // of a write worker running directly in the project tree (a worktree never
+    // contains these, so the excludes are harmless no-ops there).
+    const excludePathspec = [
+      ".",
+      ":(exclude).codex-workers",
+      `:(exclude)${WORKTREES_DIRNAME}`,
+    ];
+    try {
+      await run(["read-tree", "HEAD"]); // seed scratch index from HEAD
+      await run(["add", "--intent-to-add", "--all", "--", ...excludePathspec]);
+      return await run(["diff", "HEAD", "--", ...excludePathspec]);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   }
 }
 

@@ -22354,6 +22354,8 @@ var transcriptFilter = new TranscriptFilterImpl();
 
 // src/bridge/worktree-manager.ts
 import { execFile } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import * as os from "node:os";
 import * as path3 from "node:path";
 import { promisify } from "node:util";
 var execFileAsync = promisify(execFile);
@@ -22481,6 +22483,53 @@ var GitWorktreeManager = class {
       const resolved = path3.resolve(w.worktreePath);
       return resolved.startsWith(managedRoot);
     });
+  }
+  /**
+   * Compute a unified diff of `dir`'s working tree against HEAD, including
+   * untracked (newly created) files. Codex app-server v2 reports file changes
+   * only inside `item/fileChange` items and never emits a `turn/diff/updated`
+   * notification, so the bridge derives `diff.patch` from git itself — the
+   * canonical "what would be applied" view.
+   *
+   * Works for any write worker's directory: an isolated worktree (the normal
+   * case, where `dir` starts clean so only the worker's changes appear) or, less
+   * commonly, a write worker running directly in the project tree.
+   *
+   * The operation is NON-DESTRUCTIVE: it runs against a throwaway index file
+   * (`GIT_INDEX_FILE`) seeded from HEAD, so the worker's / user's real git index
+   * is never touched. `add --intent-to-add` into that scratch index makes
+   * untracked files render as additions; tracked modifications and deletions
+   * already show in `git diff HEAD`. Best-effort: a non-repo or git failure
+   * surfaces as a thrown Error for the caller to swallow.
+   *
+   * NOTE: for a write worker in the project tree (no worktree), the diff is
+   * working-tree-vs-HEAD, so any pre-existing uncommitted edits are included
+   * alongside the worker's — unavoidable without separate baseline tracking.
+   * Isolated worktrees (the recommended write mode) do not have this caveat.
+   */
+  async diffWorkdir(dir) {
+    const scratch = mkdtempSync(path3.join(os.tmpdir(), "codex-diff-"));
+    const indexFile = path3.join(scratch, "index");
+    const env2 = { ...process.env, GIT_INDEX_FILE: indexFile };
+    const run = async (args) => {
+      const { stdout } = await execFileAsync("git", ["-C", dir, ...args], {
+        env: env2,
+        maxBuffer: 64 * 1024 * 1024
+      });
+      return stdout;
+    };
+    const excludePathspec = [
+      ".",
+      ":(exclude).codex-workers",
+      `:(exclude)${WORKTREES_DIRNAME}`
+    ];
+    try {
+      await run(["read-tree", "HEAD"]);
+      await run(["add", "--intent-to-add", "--all", "--", ...excludePathspec]);
+      return await run(["diff", "HEAD", "--", ...excludePathspec]);
+    } finally {
+      rmSync(scratch, { recursive: true, force: true });
+    }
   }
 };
 var worktreeManager = new GitWorktreeManager();
@@ -23195,7 +23244,11 @@ var WorkerRuntime = class {
     }
     return void 0;
   }
-  /** Latest unified diff observed via `turn/diff/updated` events, if any. */
+  /**
+   * Latest unified diff observed via `turn/diff/updated` events, if any. Codex
+   * app-server v2 does not emit these, so this is usually empty for v2 workers;
+   * {@link flushStandardArtifacts} then derives the diff from the worktree.
+   */
   getLatestDiff() {
     for (let i = this.events.length - 1; i >= 0; i -= 1) {
       const evt = this.events[i];
@@ -23237,7 +23290,13 @@ var WorkerRuntime = class {
       });
       this.writtenArtifacts.add("finalMd");
     }
-    const diff = this.getLatestDiff();
+    let diff = this.getLatestDiff();
+    if (diff === void 0 || diff.length === 0) {
+      const diffDir = this.record.worktreePath ?? (this.record.sandboxPolicy === "workspace-write" ? this.record.cwd : void 0);
+      if (diffDir) {
+        diff = await worktreeManager.diffWorkdir(diffDir).catch(() => void 0);
+      }
+    }
     if (diff !== void 0 && diff.length > 0) {
       await this.store.writeDiff(diff).catch(() => {
       });

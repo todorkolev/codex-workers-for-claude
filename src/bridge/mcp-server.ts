@@ -393,7 +393,11 @@ class WorkerRuntime {
     return undefined;
   }
 
-  /** Latest unified diff observed via `turn/diff/updated` events, if any. */
+  /**
+   * Latest unified diff observed via `turn/diff/updated` events, if any. Codex
+   * app-server v2 does not emit these, so this is usually empty for v2 workers;
+   * {@link flushStandardArtifacts} then derives the diff from the worktree.
+   */
   getLatestDiff(): string | undefined {
     for (let i = this.events.length - 1; i >= 0; i -= 1) {
       const evt = this.events[i];
@@ -437,7 +441,22 @@ class WorkerRuntime {
       this.writtenArtifacts.add("finalMd");
     }
 
-    const diff = this.getLatestDiff();
+    // Prefer a diff streamed via `turn/diff/updated` (forward-compat); fall back
+    // to deriving it from git, since Codex app-server v2 reports changes only
+    // inside `item/fileChange` items and never emits that notification. The git
+    // diff is the canonical "what would be applied" view. Applies to any write
+    // worker: its isolated worktree when present, else its working dir.
+    let diff = this.getLatestDiff();
+    if (diff === undefined || diff.length === 0) {
+      const diffDir =
+        this.record.worktreePath ??
+        (this.record.sandboxPolicy === "workspace-write"
+          ? this.record.cwd
+          : undefined);
+      if (diffDir) {
+        diff = await worktreeManager.diffWorkdir(diffDir).catch(() => undefined);
+      }
+    }
     if (diff !== undefined && diff.length > 0) {
       await this.store.writeDiff(diff).catch(() => {});
       this.writtenArtifacts.add("diffPatch");

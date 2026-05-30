@@ -508,6 +508,14 @@ export interface WorktreeManager {
 
   /** List existing worktrees managed under `.worktrees/`. */
   listWorktrees(): Promise<WorktreeInfo[]>;
+
+  /**
+   * Compute a unified diff of `dir`'s working tree against HEAD, including
+   * untracked (newly created) files. Used to populate `diff.patch` for write
+   * workers, since Codex app-server v2 does not emit `turn/diff/updated`
+   * notifications. Non-destructive: leaves the real git index untouched.
+   */
+  diffWorkdir(dir: string): Promise<string>;
 }
 
 /** Result of the destructive-command check (spec §31). */
