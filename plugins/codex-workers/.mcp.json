@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codex-workers": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/bridge.js"],
+      "env": {
+        "CODEX_WORKERS_PLUGIN_ROOT": "${CLAUDE_PLUGIN_ROOT}",
+        "CODEX_WORKERS_DATA": "${CLAUDE_PLUGIN_DATA}",
+        "CODEX_WORKERS_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+      }
+    }
+  }
+}

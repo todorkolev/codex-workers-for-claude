@@ -1,0 +1,15 @@
+{
+  "name": "codex-workers",
+  "displayName": "Codex Workers for Claude",
+  "description": "Use Codex as persistent steerable workers from Claude Code.",
+  "author": {
+    "name": "Todor Kolev"
+  },
+  "homepage": "https://github.com/todorkolev/codex-workers-for-claude",
+  "repository": "https://github.com/todorkolev/codex-workers-for-claude",
+  "license": "MIT",
+  "skills": "./skills",
+  "agents": "./agents",
+  "commands": "./commands",
+  "mcpServers": "./.mcp.json"
+}

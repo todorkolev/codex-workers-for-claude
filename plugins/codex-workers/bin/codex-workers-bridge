@@ -1,0 +1,17 @@
+#!/bin/sh
+# Codex Workers for Claude — MCP bridge launcher.
+#
+# Thin POSIX shell wrapper that executes the bundled bridge with Node.
+# Used as an alternative entrypoint to invoking `node dist/bridge.js`
+# directly from .mcp.json. The plugin root is provided by Claude Code via
+# the CODEX_WORKERS_PLUGIN_ROOT environment variable.
+#
+# NOTE: stdout is reserved for the MCP (JSON-RPC) protocol. Do not echo to
+# stdout from this script; diagnostics must go to stderr.
+
+if [ -z "${CODEX_WORKERS_PLUGIN_ROOT}" ]; then
+  echo "codex-workers-bridge: CODEX_WORKERS_PLUGIN_ROOT is not set" >&2
+  exit 1
+fi
+
+exec node "${CODEX_WORKERS_PLUGIN_ROOT}/dist/bridge.js" "$@"

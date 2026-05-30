@@ -1,0 +1,16 @@
+{
+  "name": "codex-workers",
+  "owner": {
+    "name": "Codex Workers for Claude"
+  },
+  "plugins": [
+    {
+      "name": "codex-workers",
+      "description": "Run Codex as steerable workers inside Claude Code workflows.",
+      "source": "./plugins/codex-workers",
+      "homepage": "https://github.com/todorkolev/codex-workers-for-claude",
+      "repository": "https://github.com/todorkolev/codex-workers-for-claude",
+      "license": "MIT"
+    }
+  ]
+}
