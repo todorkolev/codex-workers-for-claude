@@ -9,7 +9,7 @@
   "repository": "https://github.com/todorkolev/codex-workers-for-claude",
   "license": "MIT",
   "skills": "./skills",
-  "agents": "./agents",
+  "agents": ["./agents/codex-commander.md"],
   "commands": "./commands",
   "mcpServers": "./.mcp.json"
 }
