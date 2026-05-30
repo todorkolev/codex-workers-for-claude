@@ -9,7 +9,7 @@
  *
  * Wire shapes are taken from the GROUND TRUTH protocol doc
  * (docs/codex-app-server-protocol.md "Server → Client requests") and the
- * vendored generated bindings under docs/reference/codex-app-server-ts/:
+ * generated bindings (regenerate with `codex app-server generate-ts --out <dir>`):
  *  - v1 (`ExecCommandApprovalResponse` / `ApplyPatchApprovalResponse`) carries a
  *    `ReviewDecision` = "approved" | "approved_for_session" | "denied" | "abort"
  *    | "timed_out" | { … amendments … }.

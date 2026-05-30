@@ -7,8 +7,8 @@
  * methods, missing fields, or wrong types collapse to a `"unknown"` event (or
  * are skipped where the §22 table says to drop them). The Codex wire shapes
  * mirrored here are taken from `docs/codex-app-server-protocol.md` and the
- * vendored bindings under `docs/reference/codex-app-server-ts/` (notably
- * `v2/ThreadItem.ts`, `v2/TurnPlanUpdatedNotification.ts`,
+ * generated bindings (regenerate with `codex app-server generate-ts --out <dir>`;
+ * notably `v2/ThreadItem.ts`, `v2/TurnPlanUpdatedNotification.ts`,
  * `v2/TurnDiffUpdatedNotification.ts`, `v2/ErrorNotification.ts`,
  * `v2/CommandExecutionStatus.ts`, `v2/FileUpdateChange.ts`).
  *
