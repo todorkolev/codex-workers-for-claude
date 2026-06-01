@@ -1,6 +1,7 @@
 {
   "name": "codex-workers",
   "displayName": "Codex Workers for Claude",
+  "version": "0.1.0",
   "description": "Use Codex as persistent steerable workers from Claude Code.",
   "author": {
     "name": "Todor Kolev"
