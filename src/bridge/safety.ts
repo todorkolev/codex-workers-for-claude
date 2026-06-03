@@ -419,17 +419,23 @@ class DefaultSafetyLayer implements SafetyLayer {
    *
    * Therefore each unset field falls back to the §15 flat default, with ONE
    * scoped exception: when the caller signals a clear WRITE intent — by setting
-   * sandboxPolicy explicitly or requesting an isolated worktree (useWorktree:true)
-   * — the §37 implementation profile is applied to fill the OTHER still-unset
-   * fields (approvalPolicy → on-request, useWorktree → true). The sandbox itself
-   * is never escalated by anything other than an explicit sandboxPolicy or a
+   * sandboxPolicy to a writing mode ("workspace-write" or "danger-full-access")
+   * or requesting an isolated worktree (useWorktree:true) — the §37
+   * implementation profile is applied to fill the OTHER still-unset fields
+   * (approvalPolicy → on-request, useWorktree → true). The sandbox itself is
+   * never escalated by anything other than an explicit sandboxPolicy or a
    * worktree request, preserving the §15 read-only default for review/approval
-   * workers.
+   * workers. In particular "danger-full-access" (unsandboxed, full host access,
+   * no command approval) is NEVER a default — it is only ever the resolved
+   * sandbox when the caller passes it explicitly.
    */
   resolveDefaults(input: CodexWorkerStartInput): ResolvedDefaults {
     // A worktree request is itself a write signal (you only isolate writes).
+    // "danger-full-access" is a writing mode too, so it counts as write intent.
     const wantsWrite =
-      input.sandboxPolicy === "workspace-write" || input.useWorktree === true;
+      input.sandboxPolicy === "workspace-write" ||
+      input.sandboxPolicy === "danger-full-access" ||
+      input.useWorktree === true;
     const base = wantsWrite ? IMPLEMENTATION : SPEC15_DEFAULTS;
 
     const transcriptMode: TranscriptMode =

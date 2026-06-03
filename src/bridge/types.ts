@@ -58,7 +58,7 @@ export type WorkerRecord = {
   cwd: string;
   worktreePath?: string;
   transcriptMode: TranscriptMode;
-  sandboxPolicy: "read-only" | "workspace-write";
+  sandboxPolicy: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy: "never" | "on-request";
   createdAt: string;
   updatedAt: string;
@@ -110,7 +110,14 @@ export type CodexWorkerStartInput = {
   useWorktree?: boolean;
   baseBranch?: string;
   transcriptMode?: "messages" | "messages_plus_artifacts" | "full_events";
-  sandboxPolicy?: "read-only" | "workspace-write";
+  /**
+   * Sandbox policy for the Codex worker. Defaults to "read-only".
+   * "workspace-write" allows edits within the working dir/worktree.
+   * "danger-full-access" runs Codex UNSANDBOXED with full host access and no
+   * command approval — opt-in ONLY (never a default), intended for environments
+   * where the Codex sandbox (bwrap/namespaces) cannot initialize. See §31.
+   */
+  sandboxPolicy?: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy?: "never" | "on-request";
   model?: string;
   effort?: "low" | "medium" | "high";
@@ -309,7 +316,7 @@ export type Limits = typeof limits;
  */
 export type AdapterThreadOptions = {
   cwd: string;
-  sandboxPolicy: "read-only" | "workspace-write";
+  sandboxPolicy: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy: "never" | "on-request";
   model?: string;
   effort?: "low" | "medium" | "high";
@@ -550,7 +557,7 @@ export type ApprovalDecision = {
 /** Resolved defaults for a worker, per the §37 recommended-defaults tables. */
 export type ResolvedDefaults = {
   transcriptMode: TranscriptMode;
-  sandboxPolicy: "read-only" | "workspace-write";
+  sandboxPolicy: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy: "never" | "on-request";
   useWorktree: boolean;
 };

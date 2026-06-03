@@ -450,7 +450,8 @@ class WorkerRuntime {
     if (diff === undefined || diff.length === 0) {
       const diffDir =
         this.record.worktreePath ??
-        (this.record.sandboxPolicy === "workspace-write"
+        (this.record.sandboxPolicy === "workspace-write" ||
+        this.record.sandboxPolicy === "danger-full-access"
           ? this.record.cwd
           : undefined);
       if (diffDir) {
@@ -533,7 +534,14 @@ const transcriptModeSchema = z.enum([
   "messages_plus_artifacts",
   "full_events",
 ]);
-const sandboxPolicySchema = z.enum(["read-only", "workspace-write"]);
+// "danger-full-access" runs Codex UNSANDBOXED with full host access and no
+// command approval. It is opt-in only (never a default; see resolveDefaults)
+// and is for environments where the Codex sandbox cannot initialize.
+const sandboxPolicySchema = z.enum([
+  "read-only",
+  "workspace-write",
+  "danger-full-access",
+]);
 const approvalPolicySchema = z.enum(["never", "on-request"]);
 
 const startInputShape = {
@@ -642,7 +650,12 @@ export function createMcpServer(opts: CreateMcpServerOptions): McpServer {
       description:
         "Start a Codex worker session and begin a turn with the given task. " +
         "Returns worker metadata and artifact paths once the requested " +
-        "lifecycle point (waitFor) is reached.",
+        "lifecycle point (waitFor) is reached. " +
+        "sandboxPolicy defaults to read-only; workspace-write permits edits. " +
+        'Pass sandboxPolicy="danger-full-access" ONLY to run Codex ' +
+        "unsandboxed with full host access and no command approval (for " +
+        "environments where the Codex sandbox cannot initialize) — never a " +
+        "default; it must be explicitly requested.",
       inputSchema: startInputShape,
     },
     async (args) => {

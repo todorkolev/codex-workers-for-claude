@@ -22754,15 +22754,18 @@ var DefaultSafetyLayer = class {
    *
    * Therefore each unset field falls back to the §15 flat default, with ONE
    * scoped exception: when the caller signals a clear WRITE intent — by setting
-   * sandboxPolicy explicitly or requesting an isolated worktree (useWorktree:true)
-   * — the §37 implementation profile is applied to fill the OTHER still-unset
-   * fields (approvalPolicy → on-request, useWorktree → true). The sandbox itself
-   * is never escalated by anything other than an explicit sandboxPolicy or a
+   * sandboxPolicy to a writing mode ("workspace-write" or "danger-full-access")
+   * or requesting an isolated worktree (useWorktree:true) — the §37
+   * implementation profile is applied to fill the OTHER still-unset fields
+   * (approvalPolicy → on-request, useWorktree → true). The sandbox itself is
+   * never escalated by anything other than an explicit sandboxPolicy or a
    * worktree request, preserving the §15 read-only default for review/approval
-   * workers.
+   * workers. In particular "danger-full-access" (unsandboxed, full host access,
+   * no command approval) is NEVER a default — it is only ever the resolved
+   * sandbox when the caller passes it explicitly.
    */
   resolveDefaults(input) {
-    const wantsWrite = input.sandboxPolicy === "workspace-write" || input.useWorktree === true;
+    const wantsWrite = input.sandboxPolicy === "workspace-write" || input.sandboxPolicy === "danger-full-access" || input.useWorktree === true;
     const base = wantsWrite ? IMPLEMENTATION : SPEC15_DEFAULTS;
     const transcriptMode = input.transcriptMode ?? base.transcriptMode;
     const sandboxPolicy = input.sandboxPolicy ?? base.sandboxPolicy;
@@ -22840,7 +22843,7 @@ function isTerminal2(state) {
   return TERMINAL_STATES.has(state);
 }
 function isWriteWorker(sandboxPolicy) {
-  return sandboxPolicy === "workspace-write";
+  return sandboxPolicy === "workspace-write" || sandboxPolicy === "danger-full-access";
 }
 function effectiveWriteDir(cwd, worktreePath) {
   const dir = worktreePath && worktreePath.length > 0 ? worktreePath : cwd;
@@ -23292,7 +23295,7 @@ var WorkerRuntime = class {
     }
     let diff = this.getLatestDiff();
     if (diff === void 0 || diff.length === 0) {
-      const diffDir = this.record.worktreePath ?? (this.record.sandboxPolicy === "workspace-write" ? this.record.cwd : void 0);
+      const diffDir = this.record.worktreePath ?? (this.record.sandboxPolicy === "workspace-write" || this.record.sandboxPolicy === "danger-full-access" ? this.record.cwd : void 0);
       if (diffDir) {
         diff = await worktreeManager.diffWorkdir(diffDir).catch(() => void 0);
       }
@@ -23358,7 +23361,11 @@ var transcriptModeSchema = external_exports.enum([
   "messages_plus_artifacts",
   "full_events"
 ]);
-var sandboxPolicySchema = external_exports.enum(["read-only", "workspace-write"]);
+var sandboxPolicySchema = external_exports.enum([
+  "read-only",
+  "workspace-write",
+  "danger-full-access"
+]);
 var approvalPolicySchema = external_exports.enum(["never", "on-request"]);
 var startInputShape = {
   workerId: external_exports.string(),
@@ -23427,7 +23434,7 @@ function createMcpServer(opts) {
   server.registerTool(
     "codex_worker_start",
     {
-      description: "Start a Codex worker session and begin a turn with the given task. Returns worker metadata and artifact paths once the requested lifecycle point (waitFor) is reached.",
+      description: 'Start a Codex worker session and begin a turn with the given task. Returns worker metadata and artifact paths once the requested lifecycle point (waitFor) is reached. sandboxPolicy defaults to read-only; workspace-write permits edits. Pass sandboxPolicy="danger-full-access" ONLY to run Codex unsandboxed with full host access and no command approval (for environments where the Codex sandbox cannot initialize) \u2014 never a default; it must be explicitly requested.',
       inputSchema: startInputShape
     },
     async (args) => {

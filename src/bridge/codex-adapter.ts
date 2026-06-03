@@ -59,8 +59,10 @@ function textInput(text: string): Array<{ type: "text"; text: string; text_eleme
 /** Map our `sandboxPolicy` to the Codex `SandboxMode` wire string. */
 function toSandboxMode(
   policy: AdapterThreadOptions["sandboxPolicy"],
-): "read-only" | "workspace-write" {
-  // Spec maps the strings 1:1; "danger-full-access" is intentionally never used.
+): "read-only" | "workspace-write" | "danger-full-access" {
+  // Spec maps all three strings 1:1 onto Codex SandboxMode. "danger-full-access"
+  // runs Codex unsandboxed (no bwrap/namespace, no command approval) and is only
+  // ever reached when the caller explicitly opts in (see safety.resolveDefaults).
   return policy;
 }
 

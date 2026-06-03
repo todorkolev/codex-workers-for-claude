@@ -106,9 +106,16 @@ function isTerminal(state: WorkerState): boolean {
   return TERMINAL_STATES.has(state);
 }
 
-/** A workspace-write worker is one whose sandbox policy permits edits. */
+/**
+ * A write worker is one whose sandbox policy permits edits — "workspace-write"
+ * or the unsandboxed "danger-full-access". Both occupy a write slot and are
+ * subject to the §24/§31 single-writer-per-directory rule.
+ */
 function isWriteWorker(sandboxPolicy: WorkerRecord["sandboxPolicy"]): boolean {
-  return sandboxPolicy === "workspace-write";
+  return (
+    sandboxPolicy === "workspace-write" ||
+    sandboxPolicy === "danger-full-access"
+  );
 }
 
 /**
