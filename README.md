@@ -55,11 +55,26 @@ The bridge detects a missing/logged-out Codex and returns a clear, actionable er
 
 ## Install
 
+From inside Claude Code:
+
 ```text
 /plugin marketplace add todorkolev/codex-workers-for-claude
 /plugin install codex-workers@codex-workers
 /reload-plugins
 ```
+
+### One-line install (for agents / terminals)
+
+The repo ships an [`scripts/install.sh`](scripts/install.sh) that drives the `claude`
+CLI: it removes any prior install, re-adds the marketplace, and installs the plugin. It's
+self-contained (pulls from the remote marketplace, no checkout needed), so an agent can
+run it directly:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/todorkolev/codex-workers-for-claude/main/scripts/install.sh | bash
+```
+
+Then run `/reload-plugins` (or restart Claude Code) to activate it.
 
 The repo ships the pre-bundled bridge (`plugins/codex-workers/dist/bridge.js`), so there's
 **no npm install and no npm account required** to use it.
@@ -145,6 +160,7 @@ codex-workers-for-claude/
 │  ├─ transcript-filter.ts  artifact-store.ts  worktree-manager.ts
 │  └─ safety.ts  types.ts  config.ts  logger.ts
 ├─ scripts/
+│  ├─ install.sh                       # one-line plugin install via the claude CLI
 │  ├─ build.mjs                        # esbuild bundler
 │  └─ smoke/e2e-worker.mjs             # end-to-end acceptance test
 └─ docs/
