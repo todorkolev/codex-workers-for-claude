@@ -13018,8 +13018,6 @@ import * as path from "node:path";
 
 // src/bridge/types.ts
 var limits = {
-  maxWorkersPerRun: 16,
-  maxWriteWorkersPerRun: 4,
   maxMessageCharsPerRead: 12e3,
   maxRawEventCharsPerRead: 2e4
 };
@@ -22879,19 +22877,9 @@ var WorkerRegistry = class {
     const active = this.list().filter(
       (w) => w.workerId !== workerId && !isTerminal2(w.state)
     );
-    if (active.length >= limits.maxWorkersPerRun) {
-      throw new Error(
-        `cannot start worker "${workerId}": maxWorkersPerRun (${limits.maxWorkersPerRun}) reached (${active.length} active)`
-      );
-    }
     const willWrite = isWriteWorker(resolved.sandboxPolicy);
     if (willWrite) {
       const activeWriters = active.filter((w) => isWriteWorker(w.sandboxPolicy));
-      if (activeWriters.length >= limits.maxWriteWorkersPerRun) {
-        throw new Error(
-          `cannot start write worker "${workerId}": maxWriteWorkersPerRun (${limits.maxWriteWorkersPerRun}) reached (${activeWriters.length} active)`
-        );
-      }
       if (!resolved.useWorktree && opts.cwd) {
         const myDir = effectiveWriteDir(opts.cwd, void 0);
         for (const w of activeWriters) {

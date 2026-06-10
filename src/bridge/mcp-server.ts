@@ -670,7 +670,7 @@ export function createMcpServer(opts: CreateMcpServerOptions): McpServer {
         const resolved = safety.resolveDefaults(input);
         const cwd = resolveCwd(input.cwd);
 
-        // §33/§24/§31 concurrency + write-isolation checks.
+        // §24/§31 write-isolation check (one writer per directory).
         registry.assertCanStart({ ...input, cwd, resolved });
 
         // Allocate artifact paths up-front so they exist in the record.

@@ -1311,6 +1311,11 @@ const limits = {
 };
 ```
 
+> **Implementation note:** the `maxWorkersPerRun` and `maxWriteWorkersPerRun`
+> count caps were intentionally dropped — there is no limit on parallel worker
+> count. Concurrency is bounded solely by the single-writer-per-directory rule
+> above. Only the read-size budgets remain enforced.
+
 ---
 
 ## 34. Build Strategy

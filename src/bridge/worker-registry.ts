@@ -2,8 +2,9 @@
  * In-memory worker registry (spec §13, §24, §31, §33).
  *
  * Holds every {@link WorkerRecord} for the current run in a `Map`, enforces the
- * §33 concurrency limits and the §31/§24 "HARD" write-isolation rules at
- * start time, and validates §13 lifecycle transitions on every state move.
+ * §31/§24 "HARD" write-isolation rule (one writer per directory) at start time,
+ * and validates §13 lifecycle transitions on every state move. There is no cap
+ * on parallel worker count.
  *
  * Pure in-memory: no filesystem or process I/O. The artifact store persists
  * records to disk; this module only owns the live view and the invariants.
@@ -13,7 +14,6 @@
 
 import * as path from "node:path";
 import {
-  limits,
   type CodexWorkerStartInput,
   type ResolvedDefaults,
   type WorkerRecord,
@@ -176,34 +176,19 @@ export class WorkerRegistry implements WorkerRegistryInterface {
       );
     }
 
-    // Workers that still occupy a concurrency slot (non-terminal). A previous
-    // terminal worker reusing the same id frees its slot.
+    // Live (non-terminal) workers. A previous terminal worker reusing the same
+    // id frees its slot. There is intentionally NO cap on how many workers run
+    // in parallel — concurrency is bounded only by the per-directory write rule
+    // below, which is a correctness guarantee rather than a count limit.
     const active = this.list().filter(
       (w) => w.workerId !== workerId && !isTerminal(w.state),
     );
 
-    // 3. §33 — max workers per run.
-    if (active.length >= limits.maxWorkersPerRun) {
-      throw new Error(
-        `cannot start worker "${workerId}": ` +
-          `maxWorkersPerRun (${limits.maxWorkersPerRun}) reached ` +
-          `(${active.length} active)`,
-      );
-    }
-
     const willWrite = isWriteWorker(resolved.sandboxPolicy);
     if (willWrite) {
-      // 4. §33 — max write workers per run.
       const activeWriters = active.filter((w) => isWriteWorker(w.sandboxPolicy));
-      if (activeWriters.length >= limits.maxWriteWorkersPerRun) {
-        throw new Error(
-          `cannot start write worker "${workerId}": ` +
-            `maxWriteWorkersPerRun (${limits.maxWriteWorkersPerRun}) reached ` +
-            `(${activeWriters.length} active)`,
-        );
-      }
 
-      // 5. §24/§31 — HARD rule: never two workspace-write workers in the same
+      // §24/§31 — HARD rule: never two workspace-write workers in the same
       //    directory, and never write in the main tree if another writer is
       //    already active there.
       //

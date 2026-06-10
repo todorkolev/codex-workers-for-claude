@@ -234,21 +234,23 @@ The exact decision-string enum is read from the generated
 `*ApprovalResponse.ts` bindings (regenerate with `codex app-server generate-ts --out <dir>`) —
 never guessed.
 
-## 11. Concurrency limits (spec §33)
+## 11. Concurrency & size limits (spec §33)
 
-Enforced by the worker registry:
+There is **no cap on the number of workers** (read or write) launched in
+parallel. Concurrency is bounded only by the §24/§31 write-isolation rule, which
+is a correctness guarantee rather than a count limit. The only remaining limits
+are read-size budgets, enforced by the worker registry / read tools:
 
 ```ts
 const limits = {
-  maxWorkersPerRun: 16,
-  maxWriteWorkersPerRun: 4,
   maxMessageCharsPerRead: 12000,
   maxRawEventCharsPerRead: 20000,
 };
 ```
 
 Multiple read-only workers may share a repo; multiple write workers are allowed
-only in separate worktrees; one active turn per worker; many workers per run.
+only in separate worktrees (never two writers in the same directory); one active
+turn per worker; unlimited workers per run.
 
 ## 12. stdout discipline
 

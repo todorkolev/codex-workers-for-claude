@@ -295,10 +295,15 @@ export type CodexWorkerDebugTraceOutput = {
  * §33 — Concurrency / size limits
  * ──────────────────────────────────────────────────────────────────────── */
 
-/** Spec §33. Recommended hard limits shared across the bridge. */
+/**
+ * Spec §33. Size limits shared across the bridge.
+ *
+ * Note: there is intentionally NO cap on the number of workers (or write
+ * workers) launched in parallel. Concurrency is bounded only by the §24/§31
+ * single-writer-per-directory rule (two writers may never share a directory),
+ * which is a correctness guarantee, not a count limit.
+ */
 export const limits = {
-  maxWorkersPerRun: 16,
-  maxWriteWorkersPerRun: 4,
   maxMessageCharsPerRead: 12000,
   maxRawEventCharsPerRead: 20000,
 } as const;
@@ -586,13 +591,13 @@ export type WorkerRecordPatch = Partial<
 >;
 
 /**
- * In-memory registry of all workers for a run, enforcing the §33 concurrency
- * limits and §13 state transitions.
+ * In-memory registry of all workers for a run, enforcing the §31/§24
+ * write-isolation rule and §13 state transitions. No cap on parallel workers.
  */
 export interface WorkerRegistry {
   /**
-   * Throw if starting a worker with these options would violate §33 limits
-   * (max workers, max write workers, no duplicate write dir).
+   * Throw if starting a worker with these options would violate the
+   * single-writer-per-directory rule (no two writers in the same write dir).
    */
   assertCanStart(opts: CodexWorkerStartInput & { resolved: ResolvedDefaults }): void;
 
