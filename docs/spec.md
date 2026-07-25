@@ -479,6 +479,7 @@ type CodexWorkerStartInput = {
   task: string;
   cwd?: string;
   useWorktree?: boolean;
+  /** Worktree base. Defaults to the project's current HEAD commit. */
   baseBranch?: string;
   transcriptMode?: "messages" | "messages_plus_artifacts" | "full_events";
   sandboxPolicy?: "read-only" | "workspace-write";

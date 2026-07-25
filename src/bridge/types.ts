@@ -512,7 +512,8 @@ export interface WorktreeManager {
   createWorktree(
     runId: string,
     workerId: string,
-    baseBranch: string,
+    /** Base to branch from; defaults to the project's current HEAD. */
+    baseBranch?: string,
   ): Promise<WorktreeInfo>;
 
   /** Remove a worktree previously created by {@link createWorktree}. */

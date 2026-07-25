@@ -64,9 +64,6 @@ const UNAVAILABLE_ERROR = "Codex is unavailable";
 const UNAVAILABLE_RECOVERY =
   "Check that Codex CLI is installed and logged in.";
 
-/** Default base branch for worktrees when none is supplied (spec §24). */
-const DEFAULT_BASE_BRANCH = "main";
-
 /** Hard ceiling on how long a `waitFor: "completed"` await blocks the tool. */
 const DEFAULT_COMPLETED_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -187,6 +184,12 @@ class WorkerRuntime {
       // any worker that produced a final answer / diff / changed files / commands,
       // even if collect_result is never called (§14, §24.3).
       await this.flushStandardArtifacts();
+      // Flush the record too. worker.json and the run manifest are otherwise
+      // only written on create/start/steer/interrupt, so a worker that simply
+      // finishes its turn keeps `"state": "running"` on disk forever. Anything
+      // polling those files — a supervising agent waiting for completion, or a
+      // human reading the run directory — would never observe the worker end.
+      await persistRecord(this.store, this.registry, this.record.workerId);
     }
 
     // 4. Forward filtered messages per the worker's transcript mode.
@@ -684,7 +687,7 @@ export function createMcpServer(opts: CreateMcpServerOptions): McpServer {
           const info = await worktreeManager.createWorktree(
             runId,
             input.workerId,
-            input.baseBranch ?? DEFAULT_BASE_BRANCH,
+            input.baseBranch,
           );
           worktreePath = info.worktreePath;
           workerCwd = info.worktreePath;
