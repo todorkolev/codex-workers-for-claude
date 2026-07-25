@@ -22391,6 +22391,15 @@ async function assertGitRepo() {
     );
   }
 }
+async function currentHead() {
+  const head = (await git(["rev-parse", "HEAD"])).trim();
+  if (head.length === 0) {
+    throw new Error(
+      `Cannot resolve HEAD in ${config2.projectDir}; pass an explicit baseBranch to create a worktree.`
+    );
+  }
+  return head;
+}
 function parseWorktreePorcelain(stdout) {
   const result = [];
   let currentPath;
@@ -22427,13 +22436,22 @@ function parseWorktreePorcelain(stdout) {
 var GitWorktreeManager = class {
   /**
    * Create `.worktrees/codex-<workerId>` on branch `codex/<runId>/<workerId>`
-   * from `baseBranch` (default `"main"`). Guards against a duplicate path: if a
-   * worktree already exists at the target path, the call fails with a clear
-   * error rather than letting git produce a confusing message (spec §24 rule 1:
-   * never allow two write workers in the same directory).
+   * from `baseBranch`, defaulting to the project's current `HEAD`. Guards
+   * against a duplicate path: if a worktree already exists at the target path,
+   * the call fails with a clear error rather than letting git produce a
+   * confusing message (spec §24 rule 1: never allow two write workers in the
+   * same directory).
+   *
+   * The default deliberately follows `HEAD` rather than a fixed branch name.
+   * A caller who is working on a feature branch and asks for a worktree almost
+   * always means "an isolated copy of what I am working on"; branching from
+   * `main` instead hands the worker a tree that can be arbitrarily far from the
+   * caller's, and it does so silently — the worker reports success against the
+   * wrong base. Callers wanting a specific base still pass `baseBranch`.
    */
-  async createWorktree(runId, workerId, baseBranch = "main") {
+  async createWorktree(runId, workerId, baseBranch) {
     await assertGitRepo();
+    const base = baseBranch ?? await currentHead();
     const worktreePath = path3.join(
       config2.projectDir,
       WORKTREES_DIRNAME,
@@ -22447,7 +22465,7 @@ var GitWorktreeManager = class {
       );
     }
     logger.info(
-      `creating worktree ${worktreePath} on branch ${branch} from ${baseBranch}`
+      `creating worktree ${worktreePath} on branch ${branch} from ${base}`
     );
     await git([
       "worktree",
@@ -22455,7 +22473,7 @@ var GitWorktreeManager = class {
       worktreePath,
       "-b",
       branch,
-      baseBranch
+      base
     ]);
     return { worktreePath, branch };
   }
@@ -22997,7 +23015,6 @@ var WorkerRegistry = class {
 var SERVER_NAME = "codex-worker-bridge";
 var UNAVAILABLE_ERROR = "Codex is unavailable";
 var UNAVAILABLE_RECOVERY2 = "Check that Codex CLI is installed and logged in.";
-var DEFAULT_BASE_BRANCH = "main";
 var DEFAULT_COMPLETED_TIMEOUT_MS = 10 * 60 * 1e3;
 var IDLE_SETTLE_MS = 1500;
 var WorkerRuntime = class {
@@ -23069,6 +23086,7 @@ var WorkerRuntime = class {
         this.safeTransition("idle");
       }
       await this.flushStandardArtifacts();
+      await persistRecord(this.store, this.registry, this.record.workerId);
     }
     if (transcriptFilter.shouldForward(evt, this.record.transcriptMode)) {
       const rendered = transcriptFilter.renderMessage(evt);
@@ -23443,7 +23461,7 @@ function createMcpServer(opts) {
           const info = await worktreeManager.createWorktree(
             runId,
             input.workerId,
-            input.baseBranch ?? DEFAULT_BASE_BRANCH
+            input.baseBranch
           );
           worktreePath = info.worktreePath;
           workerCwd = info.worktreePath;

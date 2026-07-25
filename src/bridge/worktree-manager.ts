@@ -74,6 +74,22 @@ async function assertGitRepo(): Promise<void> {
 }
 
 /**
+ * Resolve the project's current `HEAD` commit, used as the default worktree
+ * base. A raw SHA is returned rather than a branch name so the base is exact
+ * and cannot drift if the caller's branch moves while the worker runs.
+ */
+async function currentHead(): Promise<string> {
+  const head = (await git(["rev-parse", "HEAD"])).trim();
+  if (head.length === 0) {
+    throw new Error(
+      `Cannot resolve HEAD in ${config.projectDir}; ` +
+        "pass an explicit baseBranch to create a worktree.",
+    );
+  }
+  return head;
+}
+
+/**
  * Parse the output of `git worktree list --porcelain` into a flat list.
  *
  * The porcelain format emits one attribute per line, with records separated by
@@ -132,17 +148,27 @@ function parseWorktreePorcelain(stdout: string): WorktreeInfo[] {
 class GitWorktreeManager implements WorktreeManager {
   /**
    * Create `.worktrees/codex-<workerId>` on branch `codex/<runId>/<workerId>`
-   * from `baseBranch` (default `"main"`). Guards against a duplicate path: if a
-   * worktree already exists at the target path, the call fails with a clear
-   * error rather than letting git produce a confusing message (spec §24 rule 1:
-   * never allow two write workers in the same directory).
+   * from `baseBranch`, defaulting to the project's current `HEAD`. Guards
+   * against a duplicate path: if a worktree already exists at the target path,
+   * the call fails with a clear error rather than letting git produce a
+   * confusing message (spec §24 rule 1: never allow two write workers in the
+   * same directory).
+   *
+   * The default deliberately follows `HEAD` rather than a fixed branch name.
+   * A caller who is working on a feature branch and asks for a worktree almost
+   * always means "an isolated copy of what I am working on"; branching from
+   * `main` instead hands the worker a tree that can be arbitrarily far from the
+   * caller's, and it does so silently — the worker reports success against the
+   * wrong base. Callers wanting a specific base still pass `baseBranch`.
    */
   async createWorktree(
     runId: string,
     workerId: string,
-    baseBranch = "main",
+    baseBranch?: string,
   ): Promise<WorktreeInfo> {
     await assertGitRepo();
+
+    const base = baseBranch ?? (await currentHead());
 
     const worktreePath = path.join(
       config.projectDir,
@@ -160,7 +186,7 @@ class GitWorktreeManager implements WorktreeManager {
     }
 
     logger.info(
-      `creating worktree ${worktreePath} on branch ${branch} from ${baseBranch}`,
+      `creating worktree ${worktreePath} on branch ${branch} from ${base}`,
     );
     await git([
       "worktree",
@@ -168,7 +194,7 @@ class GitWorktreeManager implements WorktreeManager {
       worktreePath,
       "-b",
       branch,
-      baseBranch,
+      base,
     ]);
 
     return { worktreePath, branch };
