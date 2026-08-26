@@ -79,6 +79,47 @@ Then run `/reload-plugins` (or restart Claude Code) to activate it.
 The repo ships the pre-bundled bridge (`plugins/codex-workers/dist/bridge.js`), so there's
 **no npm install and no npm account required** to use it.
 
+### Troubleshooting: plugin silently fails to load
+
+If Claude Code reports something like `Reloaded: 0 plugins … 7 agents …` with
+`1 error during load` and the `codex_worker_*` tools / `codex-workers:codex-commander`
+agent never appear, the cause is almost always **stale absolute paths in Claude Code's
+plugin registry**.
+
+Claude Code stores *absolute* install paths in `~/.claude/plugins/installed_plugins.json`
+and `known_marketplaces.json`, using the `$HOME` of whatever environment ran the install.
+This repo's devcontainer runs as user `node` (`remoteUser: "node"`), so installing the
+plugin **from inside the devcontainer** writes `/home/node/...` paths. If that same
+`~/.claude` is later used from a host or container where `$HOME` differs (e.g.
+`/home/user`), the recorded paths point at a directory that does not exist and the loader
+fails with an unnamed error — even though `dist/` and everything else are intact.
+
+**Fix it with the bundled doctor** (plain Node, no build or checkout of the plugin needed —
+works even when the plugin is completely dead):
+
+```bash
+# diagnose (safe, read-only)
+node scripts/repair-plugin-paths.mjs
+# repair (backs up each file, rewrites the stale prefix to the real one)
+node scripts/repair-plugin-paths.mjs --fix
+```
+
+Or straight from the web with no checkout:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/todorkolev/codex-workers-for-claude/main/scripts/repair-plugin-paths.mjs | node - --fix
+```
+
+Then `/reload-plugins` and restart the session so the MCP server binds.
+
+The bridge also **self-heals on startup**: whenever it runs it reconciles the registry's
+recorded paths with the environment that actually launched it (disable with
+`CODEX_WORKERS_NO_SELF_HEAL=1`). That covers drift once the plugin loads, but the very
+first cold-start break — where nothing in the plugin runs — needs the doctor above.
+
+To avoid the mismatch entirely, install the plugin from the environment you actually run
+Claude Code in, rather than from inside the devcontainer while sharing `~/.claude`.
+
 ## Quickstart
 
 With the plugin installed, just ask Claude:

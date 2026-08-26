@@ -2980,7 +2980,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve4.call(this, root, ref);
+      let _sch = resolve5.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -3007,7 +3007,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve4(root, ref) {
+    function resolve5(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3225,8 +3225,8 @@ var require_utils = __commonJS({
       }
       return ind;
     }
-    function removeDotSegments(path6) {
-      let input = path6;
+    function removeDotSegments(path7) {
+      let input = path7;
       const output = [];
       let nextSlash = -1;
       let len = 0;
@@ -3478,8 +3478,8 @@ var require_schemes = __commonJS({
         wsComponent.secure = void 0;
       }
       if (wsComponent.resourceName) {
-        const [path6, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path6 && path6 !== "/" ? path6 : void 0;
+        const [path7, query] = wsComponent.resourceName.split("?");
+        wsComponent.path = path7 && path7 !== "/" ? path7 : void 0;
         wsComponent.query = query;
         wsComponent.resourceName = void 0;
       }
@@ -3638,7 +3638,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve4(baseURI, relativeURI, options) {
+    function resolve5(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -3896,7 +3896,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve4,
+      resolve: resolve5,
       resolveComponent,
       equal,
       serialize,
@@ -6872,12 +6872,12 @@ var require_dist = __commonJS({
         throw new Error(`Unknown format "${name}"`);
       return f;
     };
-    function addFormats(ajv, list, fs3, exportName) {
+    function addFormats(ajv, list, fs4, exportName) {
       var _a;
       var _b;
       (_a = (_b = ajv.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = (0, codegen_1._)`require("ajv-formats/dist/formats").${exportName}`;
       for (const f of list)
-        ajv.addFormat(f, fs3[f]);
+        ajv.addFormat(f, fs4[f]);
     }
     module.exports = exports = formatsPlugin;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7084,10 +7084,10 @@ function assignProp(target, prop, value) {
     configurable: true
   });
 }
-function getElementAtPath(obj, path6) {
-  if (!path6)
+function getElementAtPath(obj, path7) {
+  if (!path7)
     return obj;
-  return path6.reduce((acc, key) => acc?.[key], obj);
+  return path7.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -7407,11 +7407,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path6, issues) {
+function prefixIssues(path7, issues) {
   return issues.map((iss) => {
     var _a;
     (_a = iss).path ?? (_a.path = []);
-    iss.path.unshift(path6);
+    iss.path.unshift(path7);
     return iss;
   });
 }
@@ -12998,20 +12998,20 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve4) => {
+    return new Promise((resolve5) => {
       const json = serializeMessage(message);
       if (this._stdout.write(json)) {
-        resolve4();
+        resolve5();
       } else {
-        this._stdout.once("drain", resolve4);
+        this._stdout.once("drain", resolve5);
       }
     });
   }
 };
 
 // src/bridge/index.ts
-import * as fs2 from "node:fs/promises";
-import * as path5 from "node:path";
+import * as fs3 from "node:fs/promises";
+import * as path6 from "node:path";
 
 // src/bridge/config.ts
 import * as path from "node:path";
@@ -13182,12 +13182,12 @@ var CodexAppServerAdapter = class {
       this.failAll(new Error("codex app-server disposed"));
       return;
     }
-    await new Promise((resolve4) => {
+    await new Promise((resolve5) => {
       let settled = false;
       const done = () => {
         if (settled) return;
         settled = true;
-        resolve4();
+        resolve5();
       };
       child.once("exit", done);
       try {
@@ -13423,8 +13423,8 @@ var CodexAppServerAdapter = class {
       );
     }
     const id = this.nextId++;
-    return new Promise((resolve4, reject) => {
-      this.pending.set(id, { resolve: resolve4, reject, method });
+    return new Promise((resolve5, reject) => {
+      this.pending.set(id, { resolve: resolve5, reject, method });
       try {
         this.write({ jsonrpc: "2.0", id, method, params });
       } catch (err) {
@@ -13462,16 +13462,16 @@ var CodexAppServerAdapter = class {
   /** Resolve a promise once the current turn reaches a terminal notification. */
   waitForTurnEnd() {
     if (this._turnId === void 0) return Promise.resolve();
-    return new Promise((resolve4) => {
-      this.turnEndWaiters.push(resolve4);
+    return new Promise((resolve5) => {
+      this.turnEndWaiters.push(resolve5);
     });
   }
   resolveTurnEnd() {
     const waiters = this.turnEndWaiters;
     this.turnEndWaiters = [];
-    for (const resolve4 of waiters) {
+    for (const resolve5 of waiters) {
       try {
-        resolve4();
+        resolve5();
       } catch (err) {
         logger.error("turn-end waiter threw:", err);
       }
@@ -13505,12 +13505,12 @@ var CodexAppServerAdapter = class {
   }
 };
 var UNAVAILABLE_RECOVERY = "Check that Codex CLI is installed and logged in (codex login).";
-var checkCodexAvailable = () => new Promise((resolve4) => {
+var checkCodexAvailable = () => new Promise((resolve5) => {
   let settled = false;
   const finish = (value) => {
     if (settled) return;
     settled = true;
-    resolve4(value);
+    resolve5(value);
   };
   let child;
   try {
@@ -14050,8 +14050,8 @@ function getErrorMap() {
 
 // node_modules/zod/v3/helpers/parseUtil.js
 var makeIssue = (params) => {
-  const { data, path: path6, errorMaps, issueData } = params;
-  const fullPath = [...path6, ...issueData.path || []];
+  const { data, path: path7, errorMaps, issueData } = params;
+  const fullPath = [...path7, ...issueData.path || []];
   const fullIssue = {
     ...issueData,
     path: fullPath
@@ -14167,11 +14167,11 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path6, key) {
+  constructor(parent, value, path7, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
-    this._path = path6;
+    this._path = path7;
     this._key = key;
   }
   get path() {
@@ -19634,7 +19634,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
+        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -19651,7 +19651,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -19729,7 +19729,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve4(parseResult.data);
+            resolve5(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -19990,12 +19990,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve4, reject) => {
+    return new Promise((resolve5, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve4, interval);
+      const timeoutId = setTimeout(resolve5, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -21095,7 +21095,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve4) => setTimeout(resolve4, pollInterval));
+      await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -22304,11 +22304,11 @@ var TranscriptFilterImpl = class {
     const paths = [];
     for (const change of changes) {
       if (!isRecord(change)) continue;
-      const path6 = str(change, "path");
-      if (path6 === void 0) continue;
+      const path7 = str(change, "path");
+      if (path7 === void 0) continue;
       const kind = rec(change, "kind");
       const kindType = kind ? str(kind, "type") : void 0;
-      paths.push(kindType ? `${kindType}: ${path6}` : path6);
+      paths.push(kindType ? `${kindType}: ${path7}` : path7);
     }
     if (paths.length === 0) return void 0;
     return `Changed files:
@@ -22420,9 +22420,9 @@ function parseWorktreePorcelain(stdout) {
       flush();
       continue;
     }
-    const sep2 = line.indexOf(" ");
-    const key = sep2 === -1 ? line : line.slice(0, sep2);
-    const value = sep2 === -1 ? "" : line.slice(sep2 + 1);
+    const sep3 = line.indexOf(" ");
+    const key = sep3 === -1 ? line : line.slice(0, sep3);
+    const value = sep3 === -1 ? "" : line.slice(sep3 + 1);
     if (key === "worktree") {
       flush();
       currentPath = value;
@@ -23181,14 +23181,14 @@ var WorkerRuntime = class {
   /** Resolve once at least one message has been forwarded (or immediately). */
   waitForFirstMessage() {
     if (this.messages.length > 0) return Promise.resolve();
-    return new Promise((resolve4) => this.firstMessageWaiters.push(resolve4));
+    return new Promise((resolve5) => this.firstMessageWaiters.push(resolve5));
   }
   /** Resolve once the active turn has completed (or immediately if already). */
   waitForCompleted() {
     if (this.turnEnded || this.adapter.turnId === void 0) {
       return Promise.resolve();
     }
-    return new Promise((resolve4) => this.completedWaiters.push(resolve4));
+    return new Promise((resolve5) => this.completedWaiters.push(resolve5));
   }
   /**
    * Resolve once the worker is "idle": the active turn has ended (or there is
@@ -23911,8 +23911,8 @@ function summarizeDiff(diff) {
     if (line.startsWith("diff --git")) {
       const parts = line.split(" ");
       const bPath = parts[parts.length - 1] ?? "";
-      const path6 = bPath.replace(/^b\//, "");
-      current = { path: path6, added: 0, removed: 0 };
+      const path7 = bPath.replace(/^b\//, "");
+      current = { path: path7, added: 0, removed: 0 };
       files.push(current);
     } else if (line.startsWith("+++") || line.startsWith("---")) {
       continue;
@@ -23940,10 +23940,10 @@ function lastErrorText(runtime) {
 }
 function withTimeout(promise, ms) {
   let timer;
-  const timeout = new Promise((resolve4) => {
+  const timeout = new Promise((resolve5) => {
     timer = setTimeout(() => {
       logger.debug(`waitFor timed out after ${ms}ms`);
-      resolve4();
+      resolve5();
     }, ms);
     if (typeof timer.unref === "function") timer.unref();
   });
@@ -23955,8 +23955,8 @@ function withTimeout(promise, ms) {
   ]);
 }
 function delay(ms) {
-  return new Promise((resolve4) => {
-    const t = setTimeout(resolve4, ms);
+  return new Promise((resolve5) => {
+    const t = setTimeout(resolve5, ms);
     if (typeof t.unref === "function") t.unref();
   });
 }
@@ -23975,14 +23975,132 @@ function errorMessage2(err) {
   return String(err);
 }
 
+// src/bridge/path-heal.ts
+import * as fs2 from "node:fs";
+import * as os2 from "node:os";
+import * as path5 from "node:path";
+function resolveClaudeDir() {
+  const override = process.env.CLAUDE_CONFIG_DIR;
+  if (override && override.trim() !== "") return path5.resolve(override);
+  return path5.join(os2.homedir(), ".claude");
+}
+function registryFiles(claudeDir) {
+  const pluginsDir = path5.join(claudeDir, "plugins");
+  return [
+    path5.join(pluginsDir, "installed_plugins.json"),
+    path5.join(pluginsDir, "known_marketplaces.json")
+  ];
+}
+var CLAUDE_MARKER = `${path5.sep}.claude${path5.sep}`;
+function rerootIfStale(value, claudeDir) {
+  if (typeof value !== "string" || value.length === 0) return null;
+  if (!path5.isAbsolute(value)) return null;
+  const markerIdx = value.indexOf(CLAUDE_MARKER);
+  if (markerIdx < 0) return null;
+  if (fs2.existsSync(value)) return null;
+  const afterClaude = value.slice(markerIdx + CLAUDE_MARKER.length);
+  const candidate = path5.join(claudeDir, afterClaude);
+  if (candidate === value) return null;
+  if (!fs2.existsSync(candidate)) return null;
+  return candidate;
+}
+function healNode(node, claudeDir, file, healed, unresolved) {
+  if (typeof node === "string") {
+    const fixed = rerootIfStale(node, claudeDir);
+    if (fixed) {
+      healed.push({ file, from: node, to: fixed });
+      return fixed;
+    }
+    if (path5.isAbsolute(node) && node.indexOf(CLAUDE_MARKER) >= 0 && !fs2.existsSync(node)) {
+      unresolved.push({ file, from: node, to: node });
+    }
+    return node;
+  }
+  if (Array.isArray(node)) {
+    return node.map(
+      (item) => healNode(item, claudeDir, file, healed, unresolved)
+    );
+  }
+  if (node && typeof node === "object") {
+    const out = {};
+    for (const [k, v] of Object.entries(node)) {
+      out[k] = healNode(v, claudeDir, file, healed, unresolved);
+    }
+    return out;
+  }
+  return node;
+}
+function healRegistryPaths(opts) {
+  const claudeDir = opts?.claudeDir ?? resolveClaudeDir();
+  const apply = opts?.apply ?? true;
+  const healed = [];
+  const unresolved = [];
+  const changedFiles = [];
+  for (const file of registryFiles(claudeDir)) {
+    let raw;
+    try {
+      raw = fs2.readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      continue;
+    }
+    const before = healed.length;
+    const next = healNode(parsed, claudeDir, file, healed, unresolved);
+    const fileChanged = healed.length > before;
+    if (!fileChanged || !apply) continue;
+    try {
+      const backup = `${file}.bak`;
+      if (!fs2.existsSync(backup)) fs2.copyFileSync(file, backup);
+      const tmp = `${file}.tmp-${process.pid}`;
+      fs2.writeFileSync(tmp, `${JSON.stringify(next, null, 2)}
+`, "utf8");
+      fs2.renameSync(tmp, file);
+      changedFiles.push(file);
+    } catch {
+      healed.length = before;
+    }
+  }
+  return { claudeDir, healed, changedFiles, unresolved };
+}
+
 // src/bridge/index.ts
+function selfHealRegistryPaths() {
+  if (process.env.CODEX_WORKERS_NO_SELF_HEAL === "1") return;
+  try {
+    const result = healRegistryPaths({ apply: true });
+    for (const h of result.healed) {
+      logger.info(`self-heal: rewrote stale registry path`, {
+        from: h.from,
+        to: h.to
+      });
+    }
+    if (result.changedFiles.length > 0) {
+      logger.info(
+        `self-heal: reconciled ${result.changedFiles.length} registry file(s) to the current environment.`
+      );
+    }
+    for (const u of result.unresolved) {
+      logger.warn(
+        `self-heal: recorded path is missing and could not be repaired automatically`,
+        { path: u.from, hint: "run scripts/repair-plugin-paths.mjs" }
+      );
+    }
+  } catch (err) {
+    logger.warn("self-heal: skipped (non-fatal)", err);
+  }
+}
 var BRIDGE_VERSION = true ? "0.1.0" : "0.0.0-dev";
 async function allocateRunId() {
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-  const runsDir = path5.join(config2.artifactBase, "runs");
+  const runsDir = path6.join(config2.artifactBase, "runs");
   let existing = [];
   try {
-    existing = await fs2.readdir(runsDir);
+    existing = await fs3.readdir(runsDir);
   } catch {
     existing = [];
   }
@@ -24002,6 +24120,7 @@ async function main() {
     projectDir: config2.projectDir,
     artifactBase: config2.artifactBase
   });
+  selfHealRegistryPaths();
   const availability = await checkCodexAvailable();
   if (!availability.available) {
     logger.warn(

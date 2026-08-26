@@ -24,6 +24,39 @@ import { config } from "./config";
 import { logger } from "./logger";
 import { checkCodexAvailable } from "./codex-adapter";
 import { createMcpServer } from "./mcp-server";
+import { healRegistryPaths } from "./path-heal";
+
+/**
+ * Best-effort reconciliation of stale absolute paths in Claude Code's plugin
+ * registry (see path-heal.ts). Runs before anything else and NEVER throws —
+ * a broken heal must not take down the bridge. Opt out with
+ * `CODEX_WORKERS_NO_SELF_HEAL=1`.
+ */
+function selfHealRegistryPaths(): void {
+  if (process.env.CODEX_WORKERS_NO_SELF_HEAL === "1") return;
+  try {
+    const result = healRegistryPaths({ apply: true });
+    for (const h of result.healed) {
+      logger.info(`self-heal: rewrote stale registry path`, {
+        from: h.from,
+        to: h.to,
+      });
+    }
+    if (result.changedFiles.length > 0) {
+      logger.info(
+        `self-heal: reconciled ${result.changedFiles.length} registry file(s) to the current environment.`,
+      );
+    }
+    for (const u of result.unresolved) {
+      logger.warn(
+        `self-heal: recorded path is missing and could not be repaired automatically`,
+        { path: u.from, hint: "run scripts/repair-plugin-paths.mjs" },
+      );
+    }
+  } catch (err) {
+    logger.warn("self-heal: skipped (non-fatal)", err);
+  }
+}
 
 /**
  * Bridge version, inlined at build time via esbuild `--define:__BRIDGE_VERSION__`
@@ -73,6 +106,10 @@ async function main(): Promise<void> {
     projectDir: config.projectDir,
     artifactBase: config.artifactBase,
   });
+
+  // Reconcile any stale absolute paths left in Claude Code's plugin registry by
+  // an install performed under a different `$HOME` (best-effort; never throws).
+  selfHealRegistryPaths();
 
   // §32: probe but DO NOT abort — the server still starts so tools can return
   // the structured "Codex is unavailable" failure.
