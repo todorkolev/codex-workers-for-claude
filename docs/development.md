@@ -85,6 +85,14 @@ Notes:
 - `plugins/codex-workers/dist/` is intentionally **not** git-ignored — the
   bundled `bridge.js` MUST be committed (see `.gitignore`). Rebuild and commit
   `dist/bridge.js` whenever the bridge source changes.
+- **Bump the version whenever the bridge changes.** The plugin cache is keyed by
+  version (`plugins/codex-workers/.claude-plugin/plugin.json`), so a rebuilt
+  `dist/bridge.js` shipped under the same version will **not** propagate — the
+  installer sees the version already present and serves stale code. Bump
+  `package.json` (inlined into the bridge handshake by the build) and
+  `plugin.json` together, then rebuild. And note that even once the cache
+  refreshes, the running MCP server only picks up the new bridge on a full
+  Claude Code restart — not `/reload-plugins`.
 
 ## Type-check
 
