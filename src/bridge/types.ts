@@ -107,6 +107,12 @@ export type CodexWorkerStartInput = {
   workerId: string;
   task: string;
   cwd?: string;
+  /**
+   * true: the bridge creates a fresh worktree + branch for the worker.
+   * false (with cwd): bring your own directory; the bridge uses it as-is.
+   * Do NOT pass true for a directory/branch you pre-created — git rejects the
+   * duplicate branch ("a branch named ... already exists").
+   */
   useWorktree?: boolean;
   baseBranch?: string;
   transcriptMode?: "messages" | "messages_plus_artifacts" | "full_events";
@@ -120,7 +126,16 @@ export type CodexWorkerStartInput = {
   sandboxPolicy?: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy?: "never" | "on-request";
   model?: string;
-  effort?: "low" | "medium" | "high";
+  /**
+   * Codex reasoning effort, forwarded verbatim to `turn/start`. The bridge does
+   * NOT gate the value — the engine validates it — so it tracks whatever your
+   * codex version accepts and grows with the engine. The accepted set is
+   * version-dependent: codex 0.135 was strict
+   * ("none"|"minimal"|"low"|"medium"|"high"|"xhigh", ceiling "xhigh"); codex
+   * 0.153 expands it ("max", "ultra", …) and accepts arbitrary strings. Omit to
+   * let the Codex config's `model_reasoning_effort` decide.
+   */
+  effort?: string;
   instructions?: string;
   timeoutMs?: number;
   waitFor?: "started" | "first_message" | "idle" | "completed";
@@ -324,7 +339,8 @@ export type AdapterThreadOptions = {
   sandboxPolicy: "read-only" | "workspace-write" | "danger-full-access";
   approvalPolicy: "never" | "on-request";
   model?: string;
-  effort?: "low" | "medium" | "high";
+  /** Reasoning effort forwarded verbatim to `turn/start`; see CodexWorkerStartInput.effort. */
+  effort?: string;
   /** Extra base/developer instructions appended to the worker prompt contract. */
   instructions?: string;
 };

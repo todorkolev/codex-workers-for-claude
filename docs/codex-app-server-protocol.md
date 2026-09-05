@@ -105,11 +105,17 @@ For our purposes always use `{ type:"text", text, text_elements: [] }`.
 ```ts
 type SandboxMode = "read-only" | "workspace-write" | "danger-full-access";
 type AskForApproval = "untrusted" | "on-failure" | "on-request" | "never" | { granular: {...} };
-type ReasoningEffort = "none"|"minimal"|"low"|"medium"|"high"|"xhigh";
+type ReasoningEffort = "none"|"minimal"|"low"|"medium"|"high"|"xhigh"; // codex 0.135; 0.153+ adds "max","ultra",… and accepts arbitrary strings
 ```
 Spec maps: sandboxPolicy "read-only"|"workspace-write" → SandboxMode (same strings).
 approvalPolicy "never"|"on-request" → AskForApproval (same strings).
-effort "low"|"medium"|"high" → ReasoningEffort (same strings).
+effort → ReasoningEffort verbatim (same strings). The bridge forwards the
+caller's string unchanged and lets Codex validate it, so the accepted set is
+version-dependent: codex 0.135 enforced a strict ladder
+"none"|"minimal"|"low"|"medium"|"high"|"xhigh" (ceiling "xhigh"; unknown values
+rejected with "unknown variant"), while codex 0.153 expands it ("max", "ultra",
+…) and accepts arbitrary effort strings at config load. Treat the engine, not
+this doc, as authoritative.
 
 ## Server → Client notifications (method → meaning → normalized type)
 
