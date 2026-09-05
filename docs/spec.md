@@ -478,6 +478,12 @@ type CodexWorkerStartInput = {
   workerId: string;
   task: string;
   cwd?: string;
+  /**
+   * true: the bridge creates a fresh worktree + branch for the worker.
+   * false (with cwd): bring your own directory; the bridge uses it as-is.
+   * Do NOT pass true for a directory/branch you pre-created — git rejects the
+   * duplicate branch ("a branch named ... already exists").
+   */
   useWorktree?: boolean;
   /** Worktree base. Defaults to the project's current HEAD commit. */
   baseBranch?: string;
@@ -485,7 +491,8 @@ type CodexWorkerStartInput = {
   sandboxPolicy?: "read-only" | "workspace-write";
   approvalPolicy?: "never" | "on-request";
   model?: string;
-  effort?: "low" | "medium" | "high";
+  // Forwarded verbatim; engine validates. Version-dependent: none|minimal|low|medium|high|xhigh on codex 0.135 (ceiling xhigh); 0.153+ adds max/ultra/… Omit → config decides.
+  effort?: string;
   instructions?: string;
   timeoutMs?: number;
   waitFor?: "started" | "first_message" | "idle" | "completed";

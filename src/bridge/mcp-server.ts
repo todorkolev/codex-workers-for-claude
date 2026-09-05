@@ -557,7 +557,18 @@ const startInputShape = {
   sandboxPolicy: sandboxPolicySchema.optional(),
   approvalPolicy: approvalPolicySchema.optional(),
   model: z.string().optional(),
-  effort: z.enum(["low", "medium", "high"]).optional(),
+  effort: z
+    .string()
+    .describe(
+      "Codex reasoning effort, forwarded verbatim to turn/start and validated " +
+        "by the engine (the bridge does not gate it, so it tracks whatever your " +
+        "codex version accepts — no bridge change needed as the ladder grows). " +
+        "Version-dependent: codex 0.135 was strict " +
+        "(none|minimal|low|medium|high|xhigh, ceiling xhigh); codex 0.153 adds " +
+        "max, ultra and beyond and accepts arbitrary strings. Omit to let the " +
+        "Codex config's model_reasoning_effort decide.",
+    )
+    .optional(),
   instructions: z.string().optional(),
   timeoutMs: z.number().optional(),
   waitFor: z.enum(["started", "first_message", "idle", "completed"]).optional(),
@@ -654,6 +665,13 @@ export function createMcpServer(opts: CreateMcpServerOptions): McpServer {
         "Start a Codex worker session and begin a turn with the given task. " +
         "Returns worker metadata and artifact paths once the requested " +
         "lifecycle point (waitFor) is reached. " +
+        "effort sets Codex reasoning effort per turn, forwarded verbatim and " +
+        "validated by the engine (version-dependent: e.g. xhigh on codex 0.135, " +
+        "up to max/ultra on 0.153+) — omit it to let the Codex config decide. " +
+        "For isolation, either set useWorktree=true to let the bridge create a " +
+        "fresh worktree+branch, or bring your own directory via cwd with " +
+        "useWorktree=false; do not set useWorktree=true on a directory/branch " +
+        "you pre-created (git rejects the duplicate branch). " +
         "sandboxPolicy defaults to read-only; workspace-write permits edits. " +
         'Pass sandboxPolicy="danger-full-access" ONLY to run Codex ' +
         "unsandboxed with full host access and no command approval (for " +

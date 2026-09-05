@@ -288,8 +288,12 @@ export class CodexAppServerAdapter implements CodexAdapter {
 
   async startTurn(text: string): Promise<string> {
     const threadId = this.requireThread();
-    // effort (ReasoningEffort) is a turn/start param; the protocol maps our
-    // "low"|"medium"|"high" strings 1:1, so no remapping is needed.
+    // effort (ReasoningEffort) is a turn/start param. Forward whatever string
+    // the caller gave verbatim — the bridge does not gate the value, so the
+    // engine is the source of truth. The ladder is version-dependent: codex
+    // 0.135 was strict (none|minimal|low|medium|high|xhigh, rejecting the rest
+    // with "unknown variant"); codex 0.153 adds max/ultra/… and accepts
+    // arbitrary strings.
     const result = await this.request("turn/start", {
       threadId,
       input: textInput(text),
