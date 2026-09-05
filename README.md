@@ -79,6 +79,15 @@ Then run `/reload-plugins` (or restart Claude Code) to activate it.
 The repo ships the pre-bundled bridge (`plugins/codex-workers/dist/bridge.js`), so there's
 **no npm install and no npm account required** to use it.
 
+### Updating
+
+Re-run the install above (or `scripts/install.sh`) to fetch the new version, then
+**fully restart Claude Code — not just `/reload-plugins`**. The bridge runs as an MCP
+server child process: `/reload-plugins` refreshes skills, agents, commands and the plugin
+manifest, but does **not** restart that process, so a bridge change only takes effect after
+a restart. The plugin cache is also keyed by plugin version, so an update only propagates
+when the version changes — every bridge change ships a version bump for that reason.
+
 ### Troubleshooting: plugin silently fails to load
 
 If Claude Code reports something like `Reloaded: 0 plugins … 7 agents …` with

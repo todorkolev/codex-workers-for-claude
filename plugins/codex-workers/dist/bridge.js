@@ -24096,7 +24096,7 @@ function selfHealRegistryPaths() {
     logger.warn("self-heal: skipped (non-fatal)", err);
   }
 }
-var BRIDGE_VERSION = true ? "0.1.0" : "0.0.0-dev";
+var BRIDGE_VERSION = true ? "0.1.1" : "0.0.0-dev";
 async function allocateRunId() {
   const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const runsDir = path6.join(config2.artifactBase, "runs");
